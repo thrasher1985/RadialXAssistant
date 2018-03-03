@@ -1,0 +1,5 @@
+﻿  ImportEcl.cpp
+  MyForm.cpp
+  正在生成代码...
+  .NETFramework,Version=v4.5.2.AssemblyAttributes.cpp
+LINK : fatal error LNK1561: 必须定义入口点
