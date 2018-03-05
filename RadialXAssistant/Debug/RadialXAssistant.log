@@ -1,2 +1,15 @@
 ﻿  ImportEcl.cpp
-  RadialXAssistant.vcxproj -> D:\Code\RadialXAssistant\Debug\RadialXAssistant.exe
+ImportEcl.cpp(214): error C2065: “String”: 未声明的标识符
+ImportEcl.cpp(214): error C2065: “strDataLine”: 未声明的标识符
+ImportEcl.cpp(214): error C2065: “DateTime”: 未声明的标识符
+ImportEcl.cpp(214): error C2146: 语法错误: 缺少“)”(在标识符“LastDate”的前面)
+ImportEcl.cpp(215): error C2143: 语法错误: 缺少“;”(在“{”的前面)
+ImportEcl.cpp(215): error C2447: “{”: 缺少函数标题(是否是老式的形式表?)
+ImportEcl.cpp(256): error C2065: “String”: 未声明的标识符
+ImportEcl.cpp(256): error C2065: “strDataLine”: 未声明的标识符
+ImportEcl.cpp(256): error C2065: “DateTime”: 未声明的标识符
+ImportEcl.cpp(256): error C2146: 语法错误: 缺少“)”(在标识符“CurrentDate”的前面)
+ImportEcl.cpp(257): error C2143: 语法错误: 缺少“;”(在“{”的前面)
+ImportEcl.cpp(257): error C2447: “{”: 缺少函数标题(是否是老式的形式表?)
+  MyForm.cpp
+  正在生成代码...

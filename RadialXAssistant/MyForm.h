@@ -114,7 +114,7 @@ namespace RadialXAssistant {
 		}
 #pragma endregion
 	private: System::Void importScheduleToolStripMenuItem_Click(System::Object^  sender, System::EventArgs^  e) {
-		dataGridView1->DataSource= ImportEcl::ImportSchedule("C:\\123.txt");
+		//dataGridView1->DataSource= ImportEcl::ImportSchedule("C:\\123.txt");
 	}
 	};
 }
