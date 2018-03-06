@@ -5,10 +5,8 @@ namespace RadialXAssistant {
 
 	using namespace System;
 	using namespace System::ComponentModel;
-	using namespace System::Collections;
 	using namespace System::Windows::Forms;
 	using namespace System::Data;
-	using namespace System::Drawing;
 
 	/// <summary>
 	/// MyForm ժҪ
@@ -114,7 +112,9 @@ namespace RadialXAssistant {
 		}
 #pragma endregion
 	private: System::Void importScheduleToolStripMenuItem_Click(System::Object^  sender, System::EventArgs^  e) {
-		//dataGridView1->DataSource= ImportEcl::ImportSchedule("C:\\123.txt");
+		ImportEcl^ importecl = gcnew ImportEcl();
+		importecl->ImportSchedule("C:\\123.txt");
+		dataGridView1->DataSource = importecl->dt_production;
 	}
 	};
 }

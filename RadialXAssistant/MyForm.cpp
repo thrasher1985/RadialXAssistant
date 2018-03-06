@@ -2,6 +2,7 @@
 
 namespace RadialXAssistant 
 {
+
 	int main(array<System::String ^> ^args)
 	{
 

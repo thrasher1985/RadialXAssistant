@@ -1,4 +1,5 @@
 #include "ImportEcl.h"
+#include "FoundationClasses.h"
 
 namespace RadialXAssistant
 {
@@ -49,6 +50,10 @@ namespace RadialXAssistant
 		ClmnTHP->DataType = System::Type::GetType("System.Double");
 		ClmnTHP->ColumnName = "THP";
 		dt_production->Columns->Add(ClmnTHP);
+
+		ORate = "";
+		WRate = "";
+		GRate = "";
 	}
 
 	void ImportEcl::ImportSchedule(String^ FilePath)
@@ -63,11 +68,6 @@ namespace RadialXAssistant
 			String^ str_date;
 			DateTime LastDate;
 			DateTime CurrentDate;
-			String^ ORate;
-			String^ WRate;
-			String^ GRate;
-			String^ THP;
-			String^ BHP;
 			DataTable^ dtproductTemp;
 			dtproductTemp = dt_production->Clone();
 			#pragma region 获取模拟起始时间
@@ -80,6 +80,7 @@ namespace RadialXAssistant
 				}
 				if (tmp->Contains("DATES"))
 				{
+					tmp = sr->ReadLine();
 					str_date = tmp->Replace(" /", "")->Replace("'", "")->TrimStart()->TrimEnd()->Replace(" ", "-");
 					CurrentDate = DateTime::Parse(str_date);
 					if (&LastDate == nullptr)
@@ -115,7 +116,7 @@ namespace RadialXAssistant
 							#pragma region 非数据终止行
 							else
 							{
-								readWCONHISTLine(tmp, LastDate, CurrentDate, ORate, WRate, GRate, THP, BHP, dt_production, dtproductTemp);
+								readWCONHISTLine(tmp, LastDate, CurrentDate, dtproductTemp);
 								//readWCONHISTLine(String ^ strDataLine, DateTime LastDate, DateTime CurrentDate, String^ ORate, String^ WRate, String^ GRate, String^ THP, String^ BHP, DataTable ^ dt_production, DataTable^ dtproductTemp)
 								#pragma region 最后一行数据 数据终止符放在数据行的后边
 								if (tmp->Replace(" ", "")->Contains("//"))
@@ -135,17 +136,21 @@ namespace RadialXAssistant
 							continue;
 						}
 						#pragma endregion
-
 						tmp = sr->ReadLine();
 					}
 				}
 				else if (tmp->Contains("DATES"))
 				{
 					str_date = sr->ReadLine()->Replace(" /", "")->Replace("'", "")->TrimStart()->TrimEnd()->Replace(" ", "-");
+					if (!(&CurrentDate == nullptr))
+					{
+						LastDate = CurrentDate;
+					}
 					if (&LastDate == nullptr)
 					{
 						LastDate = DateTime::Parse(str_date);
 					}
+					CurrentDate = DateTime::Parse(str_date);
 				}
 				else
 				{
@@ -156,45 +161,45 @@ namespace RadialXAssistant
 		}
 	}
 
-	void ImportEcl::readWCONHISTLine(String ^ strDataLine, DateTime LastDate, DateTime CurrentDate, String^ ORate, String^ WRate, String^ GRate, String^ THP, String^ BHP, DataTable ^ dt_production, DataTable^ dtproductTemp)
+	void ImportEcl::readWCONHISTLine(String^ strDataLine, DateTime LastDate, DateTime CurrentDate, DataTable^ dtproductTemp)
 	{
 		array<String^>^ datalist = strDataLine->TrimStart()->TrimEnd()->Split(' ');
 
-		if (dtproductTemp->Select("WellName= '" + datalist[0] + "'")->Length>0)
+		if (dtproductTemp->Select("WellName= '" + datalist[0]->Replace("'", "") + "'")->Length>0)
 		{
-			
 			System::TimeSpan tspan = CurrentDate.Subtract(LastDate);
 			//按月模拟，同一口井的两个连续生产数据的时间间隔不会大于31天
 			//大于31天时属于关井情况
-			if (CurrentDate.Day != 1 && tspan.Days <= 31)
+			if (CurrentDate.Day == 1 && tspan.Days <= 31)
+			{
+				AddNewPrductLine(strDataLine, LastDate, CurrentDate, tspan, dtproductTemp);
+			}
+			else if (CurrentDate.Day != 1 && tspan.Days <= 31)
 			{
 				if (CurrentDate.Month>LastDate.Month)
 				{
 					DateTime datetimetmp = DateTime::Parse(LastDate.AddMonths(1).Year.ToString()
 						+ "-" + LastDate.AddMonths(1).Month + "-1");
 					tspan = datetimetmp.Subtract(LastDate);
-					AddNewPrductLine(strDataLine, LastDate, datetimetmp, tspan, ORate, WRate, GRate, dtproductTemp);
+					AddNewPrductLine(strDataLine, LastDate, datetimetmp, tspan, dtproductTemp);
 					LastDate = datetimetmp;
 					AddTmpPrductLine(strDataLine, CurrentDate, dtproductTemp);
 					tspan = CurrentDate.Subtract(LastDate);
 				}
-				DataRow^ dr0 = dtproductTemp->Select("WellName= '" + datalist[0] + "'")[0];
+				DataRow^ dr0 = dtproductTemp->Select("WellName= '" + datalist[0]->Replace("'", "") + "'")[0];
 				dr0["OilRate"] = double::Parse(dr0["OilRate"]->ToString()) + double::Parse(ORate)*tspan.Days;
 				dr0["WaterRate"] = double::Parse(dr0["WaterRate"]->ToString()) + double::Parse(WRate)*tspan.Days;
 				dr0["GasRate"] = double::Parse(dr0["GasRate"]->ToString()) + double::Parse(GRate)*tspan.Days;
 			}
-			else if (CurrentDate.Day == 1 && tspan.Days <= 31)
-			{
-				AddNewPrductLine(strDataLine, LastDate, CurrentDate, tspan, ORate, WRate, GRate, dtproductTemp);
-			}
+
 			#pragma region 关井的情况
 			else
 			{
 				DateTime datetimetmp = DateTime::Parse(LastDate.AddMonths(1).Year.ToString()
 					+ "-" + LastDate.AddMonths(1).Month + "-1");
 				tspan = datetimetmp.Subtract(LastDate);
-				AddNewPrductLine(strDataLine, LastDate, datetimetmp, tspan, ORate, WRate, GRate, dtproductTemp);
-				DataRow^ dr0 = dtproductTemp->Select("WellName= '" + datalist[0] + "'")[0];
+				AddNewPrductLine(strDataLine, LastDate, datetimetmp, tspan, dtproductTemp);
+				DataRow^ dr0 = dtproductTemp->Select("WellName= '" + datalist[0]->Replace("'", "") + "'")[0];
 				dtproductTemp->Rows->Remove(dr0);
 			}
 			#pragma endregion
@@ -206,83 +211,93 @@ namespace RadialXAssistant
 		else
 		{
 			AddTmpPrductLine(strDataLine, CurrentDate, dtproductTemp);
+			ORate = datalist[3];
+			WRate = datalist[4];
+			GRate = datalist[5];
 		}
 	}
-}
 
-
-void RadialXAssistant::ImportEcl::AddNewPrductLine(String ^ strDataLine, DateTime LastDate, DateTime CurrentDate, TimeSpan tspan, String^ ORate, String^ WRate, String^ GRate, DataTable^ dtproductTemp)
-{
-	array<String^>^ datalist = strDataLine->TrimStart()->TrimEnd()->Split(' ');
-	DataRow^ dr = dt_production->NewRow();
-	DataRow^ dr0 = dtproductTemp->Select("WellName= '" + datalist[0] + "'")[0];
-
-	dr["WellName"] = datalist[0];
-	dr["Month"] = LastDate.Year.ToString() + CurrentDate.Month.ToString();
-	dr["OilRate"] = double::Parse(dr0["OilRate"]->ToString()) + double::Parse(ORate)*tspan.Days;
-	dr["WaterRate"] = double::Parse(dr0["WaterRate"]->ToString()) + double::Parse(WRate)*tspan.Days;
-	dr["GasRate"] = double::Parse(dr0["GasRate"]->ToString()) + double::Parse(GRate)*tspan.Days;
-	dr["THP"] = dr0["THP"];
-	dr["BHP"] = dr0["BHP"];
-	dt_production->Rows->Add(dr);
-
-	dr0["OilRate"] = 0;
-	dr0["WaterRate"] = 0;
-	dr0["GasRate"] = 0;
-	dr0["Month"] = CurrentDate.Year.ToString() + CurrentDate.Month.ToString();
-	int remainItmCnt = datalist->Length - 6;
-	int skip = 0;
-	for (int i = 0; i < remainItmCnt; i++)
+	void ImportEcl::AddNewPrductLine(String^ strDataLine, DateTime LastDate, DateTime CurrentDate, TimeSpan tspan, DataTable^ dtproductTemp)
 	{
-		if (datalist[i + 6]->Contains("*"))
+		array<String^>^ datalist = strDataLine->TrimStart()->TrimEnd()->Split(' ');
+		DataRow^ dr = dt_production->NewRow();
+		DataRow^ dr0 = dtproductTemp->Select("WellName= '" + datalist[0]->Replace("'", "") + "'")[0];
+
+		dr["WellName"] = datalist[0]->Replace("'","");
+		if (CurrentDate.Month<10)
 		{
-			skip += Int32::Parse(datalist[i + 6]->Replace("*", "")) - 1;
+			dr["Month"] = LastDate.Year.ToString() + "0" + CurrentDate.Month.ToString();
 		}
 		else
 		{
-			if (i + 6 + skip == 8)
+			dr["Month"] = LastDate.Year.ToString() + CurrentDate.Month.ToString();
+		}
+		dr["OilRate"] = double::Parse(dr0["OilRate"]->ToString()) + double::Parse(ORate)*tspan.Days;
+		dr["WaterRate"] = double::Parse(dr0["WaterRate"]->ToString()) + double::Parse(WRate)*tspan.Days;
+		dr["GasRate"] = double::Parse(dr0["GasRate"]->ToString()) + double::Parse(GRate)*tspan.Days;
+		dr["THP"] = dr0["THP"];
+		dr["BHP"] = dr0["BHP"];
+		dt_production->Rows->Add(dr);
+
+		dr0["OilRate"] = 0;
+		dr0["WaterRate"] = 0;
+		dr0["GasRate"] = 0;
+		dr0["Month"] = CurrentDate.Year.ToString() + CurrentDate.Month.ToString();
+		int remainItmCnt = datalist->Length - 6;
+		int skip = 0;
+		for (int i = 0; i < remainItmCnt; i++)
+		{
+			if (datalist[i + 6]->Contains("*"))
 			{
-				dr0["THP"] = datalist[i + 6]->Replace("/", "");
+				skip += Int32::Parse(datalist[i + 6]->Replace("*", "")) - 1;
 			}
-			else if (i + 6 + skip == 9)
+			else
 			{
-				dr0["BHP"] = datalist[i + 6]->Replace("/", "");
+				if (i + 6 + skip == 8)
+				{
+					dr0["THP"] = datalist[i + 6]->Replace("/", "");
+				}
+				else if (i + 6 + skip == 9)
+				{
+					dr0["BHP"] = datalist[i + 6]->Replace("/", "");
+				}
 			}
 		}
 	}
-}
 
-
-void RadialXAssistant::ImportEcl::AddTmpPrductLine(String ^ strDataLine, DateTime CurrentDate, DataTable^ dtproductTemp)
-{
-	array<String^>^ datalist = strDataLine->TrimStart()->TrimEnd()->Split(' ');
-	DataRow^ dr = dtproductTemp->NewRow();
-
-	dr["WellName"] = datalist[0];
-	dr["Month"] = CurrentDate.Year.ToString() + CurrentDate.Month.ToString();
-	dr["OilRate"] = 0;
-	dr["WaterRate"] = 0;
-	dr["GasRate"] = 0;
-
-	int remainItmCnt = datalist->Length - 6;
-	int skip = 0;
-	for (int i = 0; i < remainItmCnt; i++)
+	void ImportEcl::AddTmpPrductLine(String^ strDataLine, DateTime CurrentDate, DataTable^ dtproductTemp)
 	{
-		if (datalist[i + 6]->Contains("*"))
+		array<String^>^ datalist = strDataLine->TrimStart()->TrimEnd()->Split(' ');
+		DataRow^ dr = dtproductTemp->NewRow();
+
+		dr["WellName"] = datalist[0]->Replace("'", "");
+		dr["Month"] = CurrentDate.Year.ToString() + CurrentDate.Month.ToString();
+		dr["OilRate"] = 0;
+		dr["WaterRate"] = 0;
+		dr["GasRate"] = 0;
+
+		int remainItmCnt = datalist->Length - 6;
+		int skip = 0;
+		for (int i = 0; i < remainItmCnt; i++)
 		{
-			skip += Int32::Parse(datalist[i + 6]->Replace("*", "")) - 1;
-		}
-		else
-		{
-			if (i + 6 + skip == 8)
+			if (datalist[i + 6]->Contains("*"))
 			{
-				dr["THP"] = datalist[i + 6]->Replace("/", "");
+				skip += Int32::Parse(datalist[i + 6]->Replace("*", "")) - 1;
 			}
-			else if (i + 6 + skip == 9)
+			else
 			{
-				dr["BHP"] = datalist[i + 6]->Replace("/", "");
+				if (i + 6 + skip == 8)
+				{
+					dr["THP"] = datalist[i + 6]->Replace("/", "");
+				}
+				else if (i + 6 + skip == 9)
+				{
+					dr["BHP"] = datalist[i + 6]->Replace("/", "");
+				}
 			}
 		}
+		dtproductTemp->Rows->Add(dr);
 	}
-	dtproductTemp->Rows->Add(dr);
 }
+
+
