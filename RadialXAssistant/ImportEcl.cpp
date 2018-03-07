@@ -77,20 +77,16 @@ namespace RadialXAssistant
 				{
 					str_date = tmp->Replace("-- SIMULATION START DATE ", "")->Replace("'", "")->TrimStart()->TrimEnd()->Replace(" ", "-");;
 					LastDate = DateTime::Parse(str_date);
+					CurrentDate = LastDate;
+					break;
 				}
 				if (tmp->Contains("DATES"))
 				{
 					tmp = sr->ReadLine();
 					str_date = tmp->Replace(" /", "")->Replace("'", "")->TrimStart()->TrimEnd()->Replace(" ", "-");
-					CurrentDate = DateTime::Parse(str_date);
-					if (&LastDate == nullptr)
-					{
-						LastDate = CurrentDate.AddMonths(-1);
-					}
-					if (LastDate.Day != 1)
-					{
-						LastDate = DateTime::Parse(LastDate.Year.ToString() + "-" + LastDate.Month.ToString() + "-1");
-					}
+					CurrentDate = DateTime::Parse(str_date).AddMonths(-1);
+					LastDate = CurrentDate;
+					sr->BaseStream->Seek(0, SeekOrigin::Begin);
 					break;
 				}
 				tmp = sr->ReadLine();
@@ -117,7 +113,6 @@ namespace RadialXAssistant
 							else
 							{
 								readWCONHISTLine(tmp, LastDate, CurrentDate, dtproductTemp);
-								//readWCONHISTLine(String ^ strDataLine, DateTime LastDate, DateTime CurrentDate, String^ ORate, String^ WRate, String^ GRate, String^ THP, String^ BHP, DataTable ^ dt_production, DataTable^ dtproductTemp)
 								#pragma region 最后一行数据 数据终止符放在数据行的后边
 								if (tmp->Replace(" ", "")->Contains("//"))
 								{
@@ -224,13 +219,13 @@ namespace RadialXAssistant
 		DataRow^ dr0 = dtproductTemp->Select("WellName= '" + datalist[0]->Replace("'", "") + "'")[0];
 
 		dr["WellName"] = datalist[0]->Replace("'","");
-		if (CurrentDate.Month<10)
+		if (LastDate.Month<10)
 		{
-			dr["Month"] = LastDate.Year.ToString() + "0" + CurrentDate.Month.ToString();
+			dr["Month"] = LastDate.Year.ToString() + "0" + LastDate.Month.ToString();
 		}
 		else
 		{
-			dr["Month"] = LastDate.Year.ToString() + CurrentDate.Month.ToString();
+			dr["Month"] = LastDate.Year.ToString() + LastDate.Month.ToString();
 		}
 		dr["OilRate"] = double::Parse(dr0["OilRate"]->ToString()) + double::Parse(ORate)*tspan.Days;
 		dr["WaterRate"] = double::Parse(dr0["WaterRate"]->ToString()) + double::Parse(WRate)*tspan.Days;

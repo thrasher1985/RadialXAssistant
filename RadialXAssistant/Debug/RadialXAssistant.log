@@ -1,12 +1,8 @@
-﻿  FoundationClasses.cpp
-  ImportEcl.cpp
-ImportEcl.cpp(242): warning C4965: 整数 0 的隐式装箱；请使用 nullptr 或显式转换
-ImportEcl.cpp(243): warning C4965: 整数 0 的隐式装箱；请使用 nullptr 或显式转换
-ImportEcl.cpp(244): warning C4965: 整数 0 的隐式装箱；请使用 nullptr 或显式转换
-ImportEcl.cpp(275): warning C4965: 整数 0 的隐式装箱；请使用 nullptr 或显式转换
-ImportEcl.cpp(276): warning C4965: 整数 0 的隐式装箱；请使用 nullptr 或显式转换
-ImportEcl.cpp(277): warning C4965: 整数 0 的隐式装箱；请使用 nullptr 或显式转换
-  MyForm.cpp
-  正在生成代码...
-  .NETFramework,Version=v4.5.2.AssemblyAttributes.cpp
+﻿  ImportEcl.cpp
+ImportEcl.cpp(237): warning C4965: 整数 0 的隐式装箱；请使用 nullptr 或显式转换
+ImportEcl.cpp(238): warning C4965: 整数 0 的隐式装箱；请使用 nullptr 或显式转换
+ImportEcl.cpp(239): warning C4965: 整数 0 的隐式装箱；请使用 nullptr 或显式转换
+ImportEcl.cpp(270): warning C4965: 整数 0 的隐式装箱；请使用 nullptr 或显式转换
+ImportEcl.cpp(271): warning C4965: 整数 0 的隐式装箱；请使用 nullptr 或显式转换
+ImportEcl.cpp(272): warning C4965: 整数 0 的隐式装箱；请使用 nullptr 或显式转换
   RadialXAssistant.vcxproj -> D:\Code\RadialXAssistant\Debug\RadialXAssistant.exe
